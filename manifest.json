@@ -8,4 +8,10 @@
   "short_name": "estprofilage16.github",
   "start_url": "/https://estprofilage16.github.io/calculateur-devis/",
   "theme_color": "#ffffff"
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
 }
