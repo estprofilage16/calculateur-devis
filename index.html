@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculateur de Devis Multi-Rideaux - est profilage</title>
+    <!-- Inclusion de html2pdf.js pour l'export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 10px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 950px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 0 auto; }
+        h2, h3 { color: #0056b3; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="number"], input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
+        .checkbox-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #f8f9fa; padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
+        .checkbox-item-left { display: flex; align-items: center; gap: 5px; }
+        .checkbox-item input[type="text"] { width: 130px; padding: 4px; text-align: right; }
+        button { background-color: #0056b3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; font-weight: bold; }
+        button:hover { background-color: #003d80; }
+        .resultats { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; }
+        fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 10px 15px; margin-bottom: 15px; }
+        legend { font-weight: bold; color: #0056b3; padding: 0 5px; }
+        .hublot-options { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px dashed #0056b3; display: block; }
+        
+        #zonePdfDevis { 
+            width: 100%; 
+            max-width: 1123px; 
+            background: #fff; 
+            box-sizing: border-box; 
+            padding: 25px 25px 25px 230px; 
+            margin: 0 auto; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
+            word-break: break-word;
+        }
+
+        .aperçu-wrapper {
+            background: #525659;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        table.recap-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #fff; table-layout: auto; }
+        table.recap-table th, table.recap-table td { border: 1px solid #bbb; padding: 8px; font-size: 0.85em; vertical-align: top; word-break: break-word; }
+        table.recap-table th { background-color: #0056b3; color: white; text-align: center; }
+
+        .info-lame-box { background-color: #e2e8f0; border-left: 4px solid #6f42c1; padding: 10px; margin-top: 10px; font-weight: bold; color: #4a5568; }
+        .btn-retour { background-color: #6c757d; margin-top: 10px; }
+        .btn-retour:hover { background-color: #5a6268; }
+        
+        .detail-ligne {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .detail-libelle { padding-right: 5px; }
+        .detail-points { flex-grow: 1; border-bottom: 1px dotted #888; margin: 0 5px; min-width: 20px; }
+        .detail-valeur { white-space: nowrap; font-family: monospace; font-weight: bold; }
+        .detail-ligne-total-rouge { font-weight: bold; color: #dc3545; margin-top: 5px; border-top: 1px solid #ccc; padding-top: 5px; }
+        
+        .devis-item-sauvegarde { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Calculateur de Devis Multi-Rideaux - est profilage</h2>
+
+    <!-- Étape 1 : Informations Client & Liste des configurations des rideaux -->
+    <div id="sectionEtape1">
+        <fieldset>
+            <legend>Informations Client & Projet</legend>
+            <div class="form-group">
+                <label for="nomClient">Nom du client :</label>
+                <input type="text" id="nomClient" placeholder="Ex: Nom / Entreprise">
+            </div>
+            <div class="form-group">
+                <label for="telephoneClient">Numéro de téléphone :</label>
+                <input type="text" id="telephoneClient" placeholder="Ex: 0550000000">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="adresseClient">Adresse :</label>
+                <input type="text" id="adresseClient" placeholder="Ex: Adresse du client">
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Configuration des Rideaux (Quantités par dimensions)</legend>
+            <div id="lignesConfigurationRideaux"></div>
+            <button type="button" onclick="ajouterLigneConfiguration()" style="background-color: #28a745; margin-top: 5px; font-size: 14px; padding: 6px 10px; width: auto;">+ Ajouter une autre dimension</button>
+        </fieldset>
+
+        <button onclick="demarrerSaisieRideaux()">Commencer la saisie détaillée des rideaux</button>
+        
+        <div style="margin-top: 20px; border-top: 2px solid #ccc; padding-top: 15px;">
+            <button type="button" onclick="afficherListeDevisEnregistres()" style="background-color: #17a2b8;">📂 Voir les devis enregistrés dans le site</button>
+        </div>
+    </div>
+
+    <!-- Section de gestion des devis enregistrés -->
+    <div id="sectionDevisEnregistres" style="display:none;">
+        <h3 style="color: #17a2b8;">Devis enregistrés dans le navigateur</h3>
+        <div id="listeDevisContenu" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
+        <button class="btn-retour" onclick="retourEtape1DepuisSauvegardes()">⬅ Retour au formulaire</button>
+    </div>
+
+    <!-- Étape 2 : Formulaire de saisie rideau par rideau -->
+    <div id="sectionEtape2" style="display:none;">
+        <h3 id="titreRideauCourant" style="color: #6f42c1; text-align: center; margin-bottom: 15px;"></h3>
+
+        <fieldset style="background: #eef2f7;">
+            <legend>Type de Prestation</legend>
+            <div style="display: flex; gap: 20px;">
+                <label class="checkbox-item-left">
+                    <input type="checkbox" id="typeFourniture" onchange="gererTypePrestation('fourniture')"> Fourniture seule
+                </label>
+                <label class="checkbox-item-left">
+                    <input type="checkbox" id="typeFourniturePose" checked onchange="gererTypePrestation('fourniturePose')"> Fourniture et pose
+                </label>
+            </div>
+        </fieldset>
+        
+        <div class="form-group">
+            <label for="largeur">Largeur du rideau (mètres) :</label>
+            <input type="text" inputmode="decimal" id="largeur" value="3.00" oninput="verifierLameInstantanee()">
+        </div>
+
+        <div class="form-group">
+            <label for="hauteur">Hauteur du rideau (mètres) :</label>
+            <input type="text" inputmode="decimal" id="hauteur" value="3.00" oninput="verifierLameInstantanee()">
+        </div>
+
+        <div id="affichageLameInstantanee" class="info-lame-box">
+            Lame choisie en stock : Analyse en cours...
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+            <label for="pourcentageMarge">Marge / Pourcentage à appliquer :</label>
+            <select id="pourcentageMarge">
+                <option value="0.30">30 %</option>
+                <option value="0.35">35 %</option>
+                <option value="0.40" selected>40 %</option>
+            </select>
+        </div>
+
+        <fieldset>
+            <legend>Lames disponibles en stock</legend>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
+                <label class="checkbox-item-left"><input type="checkbox" id="stock3" checked onchange="verifierLameInstantanee()"> 3.0m</label>
+                <label class="checkbox-item-left"><input type="checkbox" id="stock35" checked onchange="verifierLameInstantanee()"> 3.5m</label>
+                <label class="checkbox-item-left"><input type="checkbox" id="stock4" checked onchange="verifierLameInstantanee()"> 4.0m</label>
+                <label class="checkbox-item-left"><input type="checkbox" id="stock45" checked onchange="verifierLameInstantanee()"> 4.5m</label>
+                <label class="checkbox-item-left"><input type="checkbox" id="stock6" checked onchange="verifierLameInstantanee()"> 6.0m</label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Accessoires à fournir</legend>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accPhotocellules"> Photocellules</div>
+                    <div><input type="text" inputmode="numeric" id="prixPhotocellules" value="3500 DA"></div>
+                </div>
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accSmallbox"> Débrayage Smallbox</div>
+                    <div><input type="text" inputmode="numeric" id="prixSmallbox" value="3200 DA"></div>
+                </div>
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accEasybox"> Débrayage Easybox</div>
+                    <div><input type="text" inputmode="numeric" id="prixEasybox" value="3200 DA"></div>
+                </div>
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accSlimbox"> Débrayage Slimbox</div>
+                    <div><input type="text" inputmode="numeric" id="prixSlimbox" value="11500 DA"></div>
+                </div>
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accMFlash"> Gyrophare M-Flash</div>
+                    <div><input type="text" inputmode="numeric" id="prixMFlash" value="4000 DA"></div>
+                </div>
+                <div class="checkbox-item">
+                    <div class="checkbox-item-left"><input type="checkbox" id="accMovled"> Movled</div>
+                    <div><input type="text" inputmode="numeric" id="prixMovled" value="5700 DA"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <label class="checkbox-item-left"><input type="checkbox" id="accHublot" onchange="toggleHublotOptions()"> Option Hublot</label>
+                <div id="hublotDetails" class="hublot-options" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label for="nbreLameHublot">Nombre de lames avec hublot :</label>
+                        <input type="text" inputmode="numeric" id="nbreLameHublot" value="1">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label for="typeHublot">Type de hublot :</label>
+                        <select id="typeHublot">
+                            <option value="vide">Hublot Vide</option>
+                            <option value="pleine" selected>Hublot Plein</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="prixHublotUnitaire">Tarif unitaire (DA / ML) :</label>
+                        <input type="text" inputmode="numeric" id="prixHublotUnitaire" value="3000 DA">
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset id="fieldsetPose">
+            <legend>Frais de Pose</legend>
+            <div class="form-group">
+                <label for="poseSousTraitant">Pose sous-traitant :</label>
+                <input type="text" inputmode="numeric" id="poseSousTraitant" value="23000 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="poseEst">Pose est profilage :</label>
+                <input type="text" inputmode="numeric" id="poseEst" value="17000 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="fraisTransport">Transport :</label>
+                <input type="text" inputmode="numeric" id="fraisTransport" value="20000 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="fraisPrecadre">Pré-cadre : <span style="font-size: 0.85em; font-weight: normal; color: #666;">(S'ajuste auto : 3000 DA si Hauteur ≤ 3m, sinon 6000 DA)</span></label>
+                <input type="text" inputmode="numeric" id="fraisPrecadre" value="3000 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="fraisClark">Clark :</label>
+                <input type="text" inputmode="numeric" id="fraisClark" value="0 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="fraisHotelBouffe">Hôtel et bouffe :</label>
+                <input type="text" inputmode="numeric" id="fraisHotelBouffe" value="0 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group">
+                <label for="fraisDeplacementMesure">Déplacement de mesure :</label>
+                <input type="text" inputmode="numeric" id="fraisDeplacementMesure" value="0 DA" oninput="calculerTotalPoseFormulaire()">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="totalPoseForm">Total Pose :</label>
+                <input type="text" id="totalPoseForm" value="63000 DA" readonly style="background-color: #e9ecef; font-weight: bold;">
+            </div>
+        </fieldset>
+
+        <button onclick="validerRideauCourant()">Calculer et afficher les détails de ce groupe</button>
+        <button class="btn-retour" onclick="retourEtape1()">⬅ Retour aux informations client / dimensions</button>
+    </div>
+
+    <!-- Étape Intermédiaire : Affichage des détails du groupe courant -->
+    <div class="resultats" id="sectionDetailsRideau" style="display:none;">
+        <h3 id="titreDetailsRideau"></h3>
+        <div id="contenuDetailsRideau"></div>
+        <button id="btnActionSuivant" onclick="passerRideauSuivant()" style="background-color: #28a745; margin-top: 15px;"></button>
+        <button class="btn-retour" onclick="retourEtape2Precedent()">⬅ Retour à la modification de ce groupe</button>
+    </div>
+
+    <!-- Étape 3 : Aperçu et Résumé global de tous les rideaux -->
+    <div class="resultats" id="affichageResultat" style="display:none;">
+        <h3 style="color: #0056b3; margin-bottom: 5px;">Aperçu avant impression (Format A4 Paysage)</h3>
+        <p style="font-size: 0.9em; color: #555; margin-top: 0;">Vérifiez ci-dessous l'apparence exacte de votre devis avant de l'enregistrer ou de l'imprimer.</p>
+        
+        <div class="aperçu-wrapper">
+            <div id="zonePdfDevis">
+                <h3 id="titreProforma" style="color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 5px; margin-top: 0;"></h3>
+                <div id="contenuResultat"></div>
+            </div>
+        </div>
+
+        <button onclick="enregistrerDevisDansSite()" style="background-color: #ffc107; color: #000; margin-top: 10px; font-size: 18px; padding: 12px; font-weight: bold;">💾 Enregistrer ce devis dans le site</button>
+        <button onclick="telechargerPdf()" style="background-color: #28a745; margin-top: 10px; font-size: 18px; padding: 12px;">📥 Télécharger en PDF</button>
+        <button class="btn-retour" onclick="retourDernierDetailRideau()">⬅ Retour au dernier détail affiché</button>
+        <button onclick="recommencerDevis()" style="background-color: #6c757d; margin-top: 10px;">Nouveau Client / Devis</button>
+    </div>
+</div>
+
+<script>
+let clientGlobal = {};
+let fileAttenteRideaux = []; 
+let indexRideauCourantGlobal = 0;
+let listeRideauxEnregistres = [];
+let compteurDevisGlobal = 0;
+
+window.onload = function() {
+    ajouterLigneConfiguration();
+};
+
+function ajouterLigneConfiguration() {
+    const container = document.getElementById('lignesConfigurationRideaux');
+    const div = document.createElement('div');
+    div.className = 'form-group config-ligne';
+    div.style.display = 'flex';
+    div.style.gap = '10px';
+    div.style.alignItems = 'flex-end';
+    div.style.marginBottom = '10px';
+    
+    div.innerHTML = `
+        <div style="flex: 2;">
+            <label>Largeur (m) :</label>
+            <input type="text" inputmode="decimal" class="cfg-largeur" value="3.00">
+        </div>
+        <div style="flex: 2;">
+            <label>Hauteur (m) :</label>
+            <input type="text" inputmode="decimal" class="cfg-hauteur" value="3.00">
+        </div>
+        <div style="flex: 1;">
+            <label>Quantité :</label>
+            <input type="text" inputmode="numeric" class="cfg-qte" value="1">
+        </div>
+        <div style="flex: 0.5; padding-bottom: 2px;">
+            ${container.children.length > 0 ? '<button type="button" onclick="supprimerLigneConfig(this)" style="background-color: #dc3545; margin:0; padding: 8px 10px;">X</button>' : ''}
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function supprimerLigneConfig(btn) {
+    btn.closest('.config-ligne').remove();
+}
+
+function getNumericValue(id) {
+    let val = document.getElementById(id).value;
+    val = val.replace(/[^0-9.]/g, '');
+    return parseFloat(val) || 0;
+}
+
+document.addEventListener("focus", function(event) {
+    if (event.target.tagName === "INPUT" && (event.target.id.includes("prix") || event.target.id.includes("pose") || event.target.id.includes("frais"))) {
+        setTimeout(() => {
+            let val = event.target.value;
+            if (val.includes("DA")) {
+                event.target.setSelectionRange(0, val.indexOf("DA") - 1);
+            } else {
+                event.target.select();
+            }
+        }, 50);
+    } else if (event.target.tagName === "INPUT" && (event.target.type === "text" || event.target.inputMode)) {
+        event.target.select();
+    }
+}, true);
+
+document.addEventListener("blur", function(event) {
+    let target = event.target;
+    if (target.tagName === "INPUT" && (target.id.includes("prix") || target.id.includes("pose") || target.id.includes("frais") || target.id === "totalPoseForm")) {
+        let num = getNumericValue(target.id);
+        target.value = num + " DA";
+    }
+}, true);
+
+document.addEventListener("keydown", function(event) {
+    if (event.target.tagName === "INPUT" && (event.target.type === "text" || event.target.inputMode)) {
+        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            event.preventDefault();
+        }
+    }
+}, true);
+
+document.addEventListener("wheel", function(event) {
+    if (document.activeElement && document.activeElement.tagName === "INPUT") {
+        document.activeElement.blur();
+    }
+}, { passive: true });
+
+function formatNombre(valeur) {
+    let num = parseFloat(valeur);
+    if (isNaN(num)) return "0.00";
+    let parts = num.toFixed(2).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return parts.join('.');
+}
+
+function demarrerSaisieRideaux() {
+    const nom = document.getElementById('nomClient').value || 'Non renseigné';
+    const telephone = document.getElementById('telephoneClient').value || 'Non renseigné';
+    const adresse = document.getElementById('adresseClient').value || 'Non renseignée';
+
+    clientGlobal = { nom, telephone, adresse };
+    
+    let mapDimensions = {};
+    const lignes = document.querySelectorAll('.config-ligne');
+    
+    lignes.forEach((ligne) => {
+        let larg = parseFloat(ligne.querySelector('.cfg-largeur').value.replace(',', '.')) || 3.00;
+        let haut = parseFloat(ligne.querySelector('.cfg-hauteur').value.replace(',', '.')) || 3.00;
+        let qte = parseInt(ligne.querySelector('.cfg-qte').value) || 1;
+
+        let cle = larg.toFixed(2) + "-" + haut.toFixed(2);
+        if (mapDimensions[cle]) {
+            mapDimensions[cle].quantite += qte;
+        } else {
+            mapDimensions[cle] = { largeur: larg, hauteur: haut, quantite: qte };
+        }
+    });
+
+    fileAttenteRideaux = Object.values(mapDimensions);
+
+    if (fileAttenteRideaux.length === 0) {
+        alert("Veuillez configurer au moins un rideau avec une quantité valide.");
+        return;
+    }
+
+    indexRideauCourantGlobal = 0;
+    listeRideauxEnregistres = [];
+
+    document.getElementById('sectionEtape1').style.display = 'none';
+    document.getElementById('sectionEtape2').style.display = 'block';
+    chargerRideauCourant();
+}
+
+function chargerRideauCourant() {
+    const groupeActuel = fileAttenteRideaux[indexRideauCourantGlobal];
+    document.getElementById('titreRideauCourant').innerText = `Configuration Groupe ${indexRideauCourantGlobal + 1} sur ${fileAttenteRideaux.length} (Quantité : ${groupeActuel.quantite})`;
+    document.getElementById('largeur').value = groupeActuel.largeur.toFixed(2);
+    document.getElementById('hauteur').value = groupeActuel.hauteur.toFixed(2);
+    
+    ajusterPrixPrecadreAuto(groupeActuel.hauteur);
+    verifierLameInstantanee();
+}
+
+function ajusterPrixPrecadreAuto(hauteur) {
+    const inputPrix = document.getElementById('fraisPrecadre');
+    if (hauteur > 3.00) {
+        inputPrix.value = "6000 DA";
+    } else {
+        inputPrix.value = "3000 DA";
+    }
+    calculerTotalPoseFormulaire();
+}
+
+function determinerLameEtTest(largeur, hauteur) {
+    const stockLamesDisponibles = {
+        3.0: document.getElementById('stock3').checked,
+        3.5: document.getElementById('stock35').checked,
+        4.0: document.getElementById('stock4').checked,
+        4.5: document.getElementById('stock45').checked,
+        6.0: document.getElementById('stock6').checked
+    };
+
+    if (largeur > 5.00) {
+        return { erreur: "Largeur supérieure à 5,00 m : Aucun moteur central ne convient." };
+    }
+
+    let lameChoisie = null;
+    let regleDivision6m = false;
+
+    if (largeur === 3.00) {
+        if (stockLamesDisponibles[3.0]) {
+            lameChoisie = 3.0;
+        } else if (stockLamesDisponibles[6.0]) {
+            lameChoisie = 6.0;
+            regleDivision6m = true;
+        } else if (stockLamesDisponibles[3.5]) {
+            lameChoisie = 3.5;
+        } else if (stockLamesDisponibles[4.0]) {
+            lameChoisie = 4.0;
+        } else if (stockLamesDisponibles[4.5]) {
+            lameChoisie = 4.5;
+        }
+    } else {
+        const longueursStandards = [3.0, 3.5, 4.0, 4.5, 6.0];
+        for (let longueur of longueursStandards) {
+            if (stockLamesDisponibles[longueur] === true && longueur >= largeur) {
+                lameChoisie = longueur;
+                break;
+            }
+        }
+    }
+
+    if (!lameChoisie) {
+        return { erreur: "Aucune longueur de lame disponible en stock ne convient pour cette largeur !" };
+    }
+
+    return { lameChoisie, regleDivision6m };
+}
+
+function verifierLameInstantanee() {
+    const largeur = parseFloat(document.getElementById('largeur').value.replace(',', '.')) || 0;
+    const hauteur = parseFloat(document.getElementById('hauteur').value.replace(',', '.')) || 0;
+    const box = document.getElementById('affichageLameInstantanee');
+
+    ajusterPrixPrecadreAuto(hauteur);
+
+    const res = determinerLameEtTest(largeur, hauteur);
+    if (res.erreur) {
+        box.style.borderLeftColor = "#dc3545";
+        box.style.color = "#dc3545";
+        box.innerHTML = `⚠️ ${res.erreur}`;
+    } else {
+        box.style.borderLeftColor = "#6f42c1";
+        box.style.color = "#4a5568";
+        let texteInfo = `Lame choisie en stock : <strong>${res.lameChoisie}m</strong>`;
+        if (res.regleDivision6m) {
+            texteInfo += ` (Règle de division barre de 6m appliquée pour largeur 3m)`;
+        }
+        box.innerHTML = texteInfo;
+    }
+}
+
+function gererTypePrestation(source) {
+    const chkFourniture = document.getElementById('typeFourniture');
+    const chkFourniturePose = document.getElementById('typeFourniturePose');
+    const fieldsetPose = document.getElementById('fieldsetPose');
+
+    if (source === 'fourniture' && chkFourniture.checked) {
+        chkFourniturePose.checked = false;
+        fieldsetPose.style.display = 'none';
+    } else if (source === 'fourniturePose' && chkFourniturePose.checked) {
+        chkFourniture.checked = false;
+        fieldsetPose.style.display = 'block';
+    } else {
+        if (!chkFourniture.checked && !chkFourniturePose.checked) {
+            if (source === 'fourniture') {
+                chkFourniturePose.checked = true;
+                fieldsetPose.style.display = 'block';
+            } else {
+                chkFourniture.checked = true;
+                fieldsetPose.style.display = 'none';
+            }
+        }
+    }
+}
+
+function calculerTotalPoseFormulaire() {
+    const st = getNumericValue('poseSousTraitant');
+    const ep = getNumericValue('poseEst');
+    const tr = getNumericValue('fraisTransport');
+    const pr = getNumericValue('fraisPrecadre');
+    const cl = getNumericValue('fraisClark');
+    const hb = getNumericValue('fraisHotelBouffe');
+    const dm = getNumericValue('fraisDeplacementMesure');
+    document.getElementById('totalPoseForm').value = (st + ep + tr + pr + cl + hb + dm) + " DA";
+}
+
+function toggleHublotOptions() {
+    const isChecked = document.getElementById('accHublot').checked;
+    document.getElementById('hublotDetails').style.display = isChecked ? 'block' : 'none';
+}
+
+document.getElementById('typeHublot').addEventListener('change', function() {
+    document.getElementById('prixHublotUnitaire').value = (this.value === 'vide') ? "1500 DA" : "3000 DA";
+});
+
+function calculerRideauActuel(largeur, hauteur, stockLamesDisponibles, accessoires, tauxMarge, hublotData, poseData, inclurePose) {
+    const PRIX_LAME_MASTER_ML = 790.00;
+    const PRIX_LAME_FINALE_ML = 1349.92;
+    const PRIX_COULISSE_80X80_ML = 2698.83;
+    const PRIX_COULISSE_65X34_ML = 1232.00;
+    const PRIX_EMBOUT_UNITE = 10.14;
+    const PRIX_VIS_EMBOUT_UNITE = 2.92;
+    const PRIX_EMBOUT_LAME_FINALE_UNITE = 26.60;
+    const PRIX_ROULEMENT_UNITE = 750.00;
+    const PRIX_DOUILLE_UNITE = 260.00;
+    const PRIX_VIS_LAME_FINALE_UNITE = 20.00;
+    const PRIX_ARRETOIR_UNITE = 1026.52;
+    const PRIX_SUPPORT_AXE_UNITE = 250.00;
+    const PRIX_CROCHET_ORANGE_UNITE = 32.00;
+    const PRIX_JOINT_LAME_FINALE_ML = 470.00;
+    const PRIX_OLIVE_GUIDAGE_UNITE = 1078.11;
+    const PRIX_JOINT_NOIR_ML = 143.09;
+    const PRIX_JOINT_BROSSE_ML = 36.88;
+    const PRIX_DRAPEAU_FIXE_UNITE = 3500.00;
+
+    const testLame = determinerLameEtTest(largeur, hauteur);
+    if (testLame.erreur) {
+        return { erreur: testLame.erreur };
+    }
+    let lameChoisie = testLame.lameChoisie;
+    let regleDivision6m = testLame.regleDivision6m;
+
+    const poidsTablier = largeur * hauteur * 12;
+    const boitesARessortBrutes = (largeur * hauteur) / 2.5;
+    const partieDecimaleBoites = boitesARessortBrutes - Math.floor(boitesARessortBrutes);
+    const nombreBoites = (partieDecimaleBoites <= 0.50) ? Math.floor(boitesARessortBrutes) : Math.ceil(boitesARessortBrutes);
+
+    const lamesBrutes = hauteur / 0.085;
+    const partieDecimaleLames = lamesBrutes - Math.floor(lamesBrutes);
+    const nombreLames = (partieDecimaleLames < 0.50) ? Math.floor(lamesBrutes) : Math.ceil(lamesBrutes);
+
+    let qteLameMasterFacturee = regleDivision6m ? (nombreLames * 3.00) : (nombreLames * lameChoisie);
+    const qteLameFinale = (regleDivision6m ? 3.00 : lameChoisie);
+
+    const prixTotalLameMaster = qteLameMasterFacturee * PRIX_LAME_MASTER_ML;
+    const prixTotalLameFinale = qteLameFinale * PRIX_LAME_FINALE_ML;
+    const prixTotalEmbouts = (nombreLames * 2) * PRIX_EMBOUT_UNITE;
+    const prixTotalVisEmbouts = (nombreLames * 4) * PRIX_VIS_EMBOUT_UNITE;
+    const prixTotalEmboutsLameFinale = 2 * PRIX_EMBOUT_LAME_FINALE_UNITE;
+    const prixTotalRoulements = 2 * PRIX_ROULEMENT_UNITE;
+    const prixTotalDouilles = 2 * PRIX_DOUILLE_UNITE;
+    const prixTotalVisLameFinale = 2 * PRIX_VIS_LAME_FINALE_UNITE;
+
+    let quantiteBarresCoulisse = (hauteur <= 2.35) ? 1 : 2;
+    let longueurBarreCoulisse = (hauteur <= 4.35) ? 4.00 : 6.50;
+    const metrageTotalCoulisse = quantiteBarresCoulisse * longueurBarreCoulisse;
+    const prixTotalCoulisse80x80 = metrageTotalCoulisse * PRIX_COULISSE_80X80_ML;
+    const prixTotalCoulisse65x34 = metrageTotalCoulisse * PRIX_COULISSE_65X34_ML;
+
+    const prixTotalArretoir = 2 * PRIX_ARRETOIR_UNITE;
+    const prixTotalSupportAxe = 2 * PRIX_SUPPORT_AXE_UNITE;
+    const prixTotalCrochetOrange = nombreBoites * PRIX_CROCHET_ORANGE_UNITE;
+    const prixTotalJointLameFinale = largeur * PRIX_JOINT_LAME_FINALE_ML;
+    const prixTotalOliveGuidage = 2 * PRIX_OLIVE_GUIDAGE_UNITE;
+    const metrageTotalJointCoulisse = Math.max(0, hauteur - 0.40) * 2;
+    const prixTotalJointNoir = metrageTotalJointCoulisse * PRIX_JOINT_NOIR_ML;
+    const prixTotalJointBrosse = metrageTotalJointCoulisse * PRIX_JOINT_BROSSE_ML;
+    const prixTotalDrapeauFixe = 2 * PRIX_DRAPEAU_FIXE_UNITE;
+
+    let totalAccessoiresOptionnels = 0;
+    let listeAccessoiresNoms = [];
+    let detailsAccTexte = "";
+    for (let key in accessoires) {
+        if (accessoires[key].actif) {
+            totalAccessoiresOptionnels += accessoires[key].prix;
+            detailsAccTexte += `<div class="detail-ligne"><span class="detail-libelle">${key}</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(accessoires[key].prix)} DA</span></div>`;
+            listeAccessoiresNoms.push(key);
+        }
+    }
+
+    if (hublotData.actif && hublotData.nombre > 0) {
+        let libelleLameHublot = hublotData.nombre === 1 ? "1 lame hublot" : `${hublotData.nombre} lames hublot`;
+        listeAccessoiresNoms.push(`Hublot (${libelleLameHublot} - ${hublotData.type})`);
+    }
+
+    let isAxe76 = largeur >= 3.80;
+    let prixMoteur = 0;
+    let libelleMoteur = "";
+    if (!isAxe76) {
+        if (poidsTablier <= 200) { prixMoteur = 20700.00; libelleMoteur = "Moteur 60 SIMPLE (< 200kg)"; }
+        else { prixMoteur = 47100.00; libelleMoteur = "Moteur 60 DOUBLE (> 200kg)"; }
+    } else {
+        if (poidsTablier <= 230) { prixMoteur = 38200.00; libelleMoteur = "Moteur 76 SIMPLE (< 230kg)"; }
+        else { prixMoteur = 48200.00; libelleMoteur = "Moteur 76 DOUBLE (> 230kg)"; }
+    }
+
+    const sommeDeBase = prixTotalLameMaster + prixTotalLameFinale + prixTotalCoulisse80x80 + prixTotalCoulisse65x34 + 
+                        prixTotalEmbouts + prixTotalVisEmbouts + prixTotalEmboutsLameFinale + prixTotalRoulements + 
+                        prixTotalDouilles + prixTotalVisLameFinale + prixTotalArretoir + prixTotalSupportAxe + 
+                        prixTotalCrochetOrange + prixTotalJointLameFinale + prixTotalOliveGuidage + prixTotalJointNoir + 
+                        prixTotalJointBrosse + prixTotalDrapeauFixe + totalAccessoiresOptionnels;
+
+    const montantMarge = sommeDeBase * tauxMarge;
+    const totalTablier = sommeDeBase + montantMarge;
+
+    const prixThermolaquage = largeur * hauteur * 1200.00;
+    const prixBoiteARessort = nombreBoites * (isAxe76 ? 1500.00 : 600.00);
+    const prixRessort = (nombreBoites * (hauteur + 1)) * 330.00;
+    const prixProtectionPVC = (nombreBoites * (isAxe76 ? 0.95 : 0.7)) * 750.00;
+    let prixTube = !isAxe76 ? ((largeur <= 3.00) ? 2800.00 : 3700.00) : ((largeur <= 4.50) ? 5500.00 : 6000.00);
+    let prixHublot = hublotData.actif ? (hublotData.nombre * largeur * hublotData.tarifUnitaire) : 0;
+    const prixEmballageNylon = (largeur * hauteur) * 10.00;
+    const prixEmballageCartonCoulisses = metrageTotalJointCoulisse * 51.74;
+    const prixEmballageCartonTablier = (largeur * hauteur) * 134.52;
+    const prixMainOeuvre = 7000.00;
+
+    const totalAxe = prixThermolaquage + prixBoiteARessort + prixRessort + prixProtectionPVC + prixTube + prixMoteur + prixHublot + prixEmballageNylon + prixEmballageCartonCoulisses + prixEmballageCartonTablier + prixMainOeuvre;
+
+    const totalPose = inclurePose ? (poseData.sousTraitant + poseData.estProfilage + poseData.transport + poseData.precadre + poseData.clark + poseData.hotelBouffe + poseData.deplacementMesure) : 0;
+    const prixUnitaireRideau = totalTablier + totalAxe + totalPose;
+
+    let typePrestationTexte = inclurePose ? "Fourniture et pose" : "Fourniture";
+    const largeurMm = Math.round(largeur * 1000);
+    const hauteurMm = Math.round(hauteur * 1000);
+
+    let designationTexte = `${typePrestationTexte} d'une Porte enroulable -MOD.MASTER ; en Aluminium Extrudé de Haute résistance, Lame droite DOUBLE PAROI DE 85x1,5mm, plaine. Système breveté anti glissement avec bouchons en acier inox, Dernière lame renforcée en double paroi 120x1.5mm, Joint epdm pour étanchéité et roulements blindés; Guides avec nylons polyamide de faible frottement.<br>`;
+
+    return {
+        largeur: largeur.toFixed(2),
+        hauteur: hauteur.toFixed(2),
+        largeurMm,
+        hauteurMm,
+        inclurePose,
+        totalTablier,
+        totalAxe,
+        totalPose,
+        prixUnitaireRideau,
+        designationTexte,
+        listeAccessoiresNoms,
+        libelleMoteur,
+        detailsCalcul: {
+            sommeDeBase,
+            montantMarge,
+            tauxMargeText: (tauxMarge * 100) + "%",
+            detailsAccTexte,
+            prixTotalLameMaster,
+            prixTotalLameFinale,
+            prixTotalCoulisse80x80,
+            prixTotalCoulisse65x34,
+            prixTotalEmbouts,
+            prixTotalVisEmbouts,
+            prixTotalEmboutsLameFinale,
+            prixTotalRoulements,
+            prixTotalDouilles,
+            prixTotalVisLameFinale,
+            prixTotalArretoir,
+            prixTotalSupportAxe,
+            prixTotalCrochetOrange,
+            prixTotalJointLameFinale,
+            prixTotalOliveGuidage,
+            prixTotalJointNoir,
+            prixTotalJointBrosse,
+            prixTotalDrapeauFixe,
+            prixThermolaquage,
+            prixBoiteARessort,
+            prixRessort,
+            prixProtectionPVC,
+            prixTube,
+            prixMoteur,
+            libelleMoteur,
+            prixHublot,
+            prixEmballageNylon,
+            prixEmballageCartonCoulisses,
+            prixEmballageCartonTablier,
+            prixMainOeuvre,
+            poseData
+        }
+    };
+}
+
+function validerRideauCourant() {
+    const groupeActuel = fileAttenteRideaux[indexRideauCourantGlobal];
+    const largeur = parseFloat(document.getElementById('largeur').value.replace(',', '.'));
+    const hauteur = parseFloat(document.getElementById('hauteur').value.replace(',', '.'));
+    const tauxMarge = parseFloat(document.getElementById('pourcentageMarge').value);
+    const inclurePose = document.getElementById('typeFourniturePose').checked;
+
+    const poseData = {
+        sousTraitant: getNumericValue('poseSousTraitant'),
+        estProfilage: getNumericValue('poseEst'),
+        transport: getNumericValue('fraisTransport'),
+        precadre: getNumericValue('fraisPrecadre'),
+        clark: getNumericValue('fraisClark'),
+        hotelBouffe: getNumericValue('fraisHotelBouffe'),
+        deplacementMesure: getNumericValue('fraisDeplacementMesure')
+    };
+
+    const stock = {
+        3.0: document.getElementById('stock3').checked,
+        3.5: document.getElementById('stock35').checked,
+        4.0: document.getElementById('stock4').checked,
+        4.5: document.getElementById('stock45').checked,
+        6.0: document.getElementById('stock6').checked
+    };
+
+    const accessoires = {
+        'Photocellules': { actif: document.getElementById('accPhotocellules').checked, prix: getNumericValue('prixPhotocellules') },
+        'Débrayage Smallbox': { actif: document.getElementById('accSmallbox').checked, prix: getNumericValue('prixSmallbox') },
+        'Débrayage Easybox': { actif: document.getElementById('accEasybox').checked, prix: getNumericValue('prixEasybox') },
+        'Débrayage Slimbox': { actif: document.getElementById('accSlimbox').checked, prix: getNumericValue('prixSlimbox') },
+        'Gyrophare M-Flash': { actif: document.getElementById('accMFlash').checked, prix: getNumericValue('prixMFlash') },
+        'Movled': { actif: document.getElementById('accMovled').checked, prix: getNumericValue('prixMovled') }
+    };
+
+    const hublotData = {
+        actif: document.getElementById('accHublot').checked,
+        nombre: parseInt(document.getElementById('nbreLameHublot').value) || 0,
+        type: document.getElementById('typeHublot').value,
+        tarifUnitaire: getNumericValue('prixHublotUnitaire')
+    };
+
+    const res = calculerRideauActuel(largeur, hauteur, stock, accessoires, tauxMarge, hublotData, poseData, inclurePose);
+
+    if (res.erreur) {
+        alert("Erreur sur ce groupe : " + res.erreur);
+        return;
+    }
+
+    const donneesRideauObjet = {
+        numero: indexRideauCourantGlobal + 1,
+        quantite: groupeActuel.quantite,
+        largeur: res.largeur,
+        hauteur: res.hauteur,
+        largeurMm: res.largeurMm,
+        hauteurMm: res.hauteurMm,
+        designation: res.designationTexte,
+        listeAccessoires: res.listeAccessoiresNoms,
+        libelleMoteur: res.libelleMoteur,
+        totalTablier: res.totalTablier,
+        totalAxe: res.totalAxe,
+        totalPose: res.totalPose,
+        prixUnitaire: res.prixUnitaireRideau,
+        montantTotal: res.prixUnitaireRideau * groupeActuel.quantite
+    };
+
+    if (indexRideauCourantGlobal < listeRideauxEnregistres.length) {
+        listeRideauxEnregistres[indexRideauCourantGlobal] = donneesRideauObjet;
+    } else {
+        listeRideauxEnregistres.push(donneesRideauObjet);
+    }
+
+    document.getElementById('sectionEtape2').style.display = 'none';
+    afficherDetailsRideauActuel(res, groupeActuel.quantite);
+}
+
+function afficherDetailsRideauActuel(res, quantite) {
+    const divDetails = document.getElementById('sectionDetailsRideau');
+    divDetails.style.display = 'block';
+
+    document.getElementById('titreDetailsRideau').innerText = `Détails unitaires - Groupe n°${indexRideauCourantGlobal + 1} (${res.largeur}m × ${res.hauteur}m | Qté : ${quantite})`;
+    
+    let htmlDetails = `
+        <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #ccc;">
+            <h4 style="color: #0056b3; margin-top:0;">1. Détail du Tablier :</h4>
+            <div style="font-family: monospace;">
+                <div class="detail-ligne"><span class="detail-libelle">LAME MASTER</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalLameMaster)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">LAME FINALE DOUBLE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalLameFinale)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">COULISSE GUIDE 80x80</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalCoulisse80x80)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">GUIDE DE 65X34</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalCoulisse65x34)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">EMBOUT</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalEmbouts)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">VIS EMBOUT</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalVisEmbouts)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">EMBOUT LAME FINALE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalEmboutsLameFinale)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">ROULEMENT</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalRoulements)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">DOUILLE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalDouilles)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">VIS LAME FINALE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalVisLameFinale)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">ARRETOIR</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalArretoir)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">SUPPORT AXE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalSupportAxe)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">CROCHET ORANGE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalCrochetOrange)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">JOINT LAME FINALE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalJointLameFinale)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">OLIVE GUIDAGE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalOliveGuidage)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">JOINT NOIR</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalJointNoir)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">JOINT BROSSE</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTotalJointBrosse)} DA</span></div>
+            </div>
+            ${res.detailsCalcul.detailsAccTexte ? `<div style="margin-top: 5px;">${res.detailsCalcul.detailsAccTexte}</div>` : ''}
+            <div class="detail-ligne" style="margin-top: 8px;"><span class="detail-libelle">• Somme de base composants & accessoires</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.sommeDeBase)} DA</span></div>
+            <div class="detail-ligne"><span class="detail-libelle">• Marge appliquée (${res.detailsCalcul.tauxMargeText})</span><span class="detail-points"></span><span class="detail-valeur">+${formatNombre(res.detailsCalcul.montantMarge)} DA</span></div>
+            <div class="detail-ligne detail-ligne-total-rouge"><span class="detail-libelle">Total Tablier Unitaire</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.totalTablier)} DA</span></div>
+            
+            <h4 style="color: #0056b3; margin-top: 15px; margin-bottom: 5px;">2. Détail de l'Axe & Moteur :</h4>
+            <div style="font-family: monospace;">
+                <div class="detail-ligne"><span class="detail-libelle">Thermolaquage</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixThermolaquage)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">Boîtes à ressort</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixBoiteARessort)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">Ressorts</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixRessort)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">Protection PVC</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixProtectionPVC)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">Tube d'enroulement</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixTube)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">${res.detailsCalcul.libelleMoteur}</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixMoteur)} DA</span></div>
+                ${res.detailsCalcul.prixHublot > 0 ? `<div class="detail-ligne"><span class="detail-libelle">Option Hublot</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixHublot)} DA</span></div>` : ''}
+                <div class="detail-ligne"><span class="detail-libelle">Emballage (Nylon / Cartons)</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixEmballageNylon + res.detailsCalcul.prixEmballageCartonCoulisses + res.detailsCalcul.prixEmballageCartonTablier)} DA</span></div>
+                <div class="detail-ligne"><span class="detail-libelle">Main d'œuvre</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.prixMainOeuvre)} DA</span></div>
+            </div>
+            <div class="detail-ligne detail-ligne-total-rouge"><span class="detail-libelle">Total Axe & Moteur</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.totalAxe)} DA</span></div>
+
+            <h4 style="color: #0056b3; margin-top: 15px; margin-bottom: 5px;">3. Frais de Pose :</h4>
+            ${res.inclurePose ? `
+                <div style="font-family: monospace;">
+                    <div class="detail-ligne"><span class="detail-libelle">Sous-traitant</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.sousTraitant)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">est profilage</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.estProfilage)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">Transport</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.transport)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">Pré-cadre</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.precadre)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">Clark</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.clark)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">Hôtel</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.hotelBouffe)} DA</span></div>
+                    <div class="detail-ligne"><span class="detail-libelle">Déplacement</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.detailsCalcul.poseData.deplacementMesure)} DA</span></div>
+                </div>
+                <div class="detail-ligne detail-ligne-total-rouge"><span class="detail-libelle">Total Pose Unitaire</span><span class="detail-points"></span><span class="detail-valeur">${formatNombre(res.totalPose)} DA</span></div>
+            ` : `<p><em>Fourniture seule (Pas de frais de pose)</em></p>`}
+
+            <div style="background-color: #e2e8f0; padding: 10px; border-radius: 4px; margin-top: 15px; text-align: right; font-size: 1.1em;">
+                <strong>PRIX UNITAIRE : ${formatNombre(res.prixUnitaireRideau)} DA | QUANTITÉ : ${quantite} | TOTAL LIGNE : ${formatNombre(res.prixUnitaireRideau * quantite)} DA</strong>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('contenuDetailsRideau').innerHTML = htmlDetails;
+
+    const btnSuivant = document.getElementById('btnActionSuivant');
+    if (indexRideauCourantGlobal < fileAttenteRideaux.length - 1) {
+        btnSuivant.innerText = "Passer au groupe de dimensions suivant";
+    } else {
+        btnSuivant.innerText = "Afficher l'aperçu global final du devis";
+    }
+}
+
+function passerRideauSuivant() {
+    document.getElementById('sectionDetailsRideau').style.display = 'none';
+
+    if (indexRideauCourantGlobal < fileAttenteRideaux.length - 1) {
+        indexRideauCourantGlobal++;
+        chargerRideauCourant();
+        document.getElementById('sectionEtape2').style.display = 'block';
+    } else {
+        afficherRecapitulatifGlobal();
+    }
+}
+
+function retourEtape1() {
+    document.getElementById('sectionEtape2').style.display = 'none';
+    document.getElementById('sectionEtape1').style.display = 'block';
+}
+
+function retourEtape2Precedent() {
+    document.getElementById('sectionDetailsRideau').style.display = 'none';
+    document.getElementById('sectionEtape2').style.display = 'block';
+}
+
+function retourDernierDetailRideau() {
+    document.getElementById('affichageResultat').style.display = 'none';
+    indexRideauCourantGlobal = fileAttenteRideaux.length - 1;
+    const dernierRideau = fileAttenteRideaux[indexRideauCourantGlobal];
+    const stock = {
+        3.0: document.getElementById('stock3').checked,
+        3.5: document.getElementById('stock35').checked,
+        4.0: document.getElementById('stock4').checked,
+        4.5: document.getElementById('stock45').checked,
+        6.0: document.getElementById('stock6').checked
+    };
+    const accessoires = {
+        'Photocellules': { actif: document.getElementById('accPhotocellules').checked, prix: getNumericValue('prixPhotocellules') },
+        'Débrayage Smallbox': { actif: document.getElementById('accSmallbox').checked, prix: getNumericValue('prixSmallbox') },
+        'Débrayage Easybox': { actif: document.getElementById('accEasybox').checked, prix: getNumericValue('prixEasybox') },
+        'Débrayage Slimbox': { actif: document.getElementById('accSlimbox').checked, prix: getNumericValue('prixSlimbox') },
+        'Gyrophare M-Flash': { actif: document.getElementById('accMFlash').checked, prix: getNumericValue('prixMFlash') },
+        'Movled': { actif: document.getElementById('accMovled').checked, prix: getNumericValue('prixMovled') }
+    };
+    const hublotData = {
+        actif: document.getElementById('accHublot').checked,
+        nombre: parseInt(document.getElementById('nbreLameHublot').value) || 0,
+        type: document.getElementById('typeHublot').value,
+        tarifUnitaire: getNumericValue('prixHublotUnitaire')
+    };
+    const poseData = {
+        sousTraitant: getNumericValue('poseSousTraitant'),
+        estProfilage: getNumericValue('poseEst'),
+        transport: getNumericValue('fraisTransport'),
+        precadre: getNumericValue('fraisPrecadre'),
+        clark: getNumericValue('fraisClark'),
+        hotelBouffe: getNumericValue('fraisHotelBouffe'),
+        deplacementMesure: getNumericValue('fraisDeplacementMesure')
+    };
+    const res = calculerRideauActuel(dernierRideau.largeur, dernierRideau.hauteur, stock, accessoires, parseFloat(document.getElementById('pourcentageMarge').value), hublotData, poseData, document.getElementById('typeFourniturePose').checked);
+    afficherDetailsRideauActuel(res, dernierRideau.quantite);
+}
+
+function afficherRecapitulatifGlobal() {
+    compteurDevisGlobal++;
+    const now = new Date();
+    const annee = now.getFullYear();
+    const mois = String(now.getMonth() + 1).padStart(2, '0');
+    const jour = String(now.getDate()).padStart(2, '0');
+    const numeroProforma = `proforma n° ${annee}${mois}${jour}-${compteurDevisGlobal}`;
+
+    document.getElementById('titreProforma').innerText = numeroProforma;
+
+    const divRes = document.getElementById('affichageResultat');
+    const divContenu = document.getElementById('contenuResultat');
+    divRes.style.display = 'block';
+
+    let sommeGlobale = 0;
+    let lignesTableau = "";
+
+    if (listeRideauxEnregistres.length > 0) {
+        let premiereDesignation = listeRideauxEnregistres[0].designation;
+        lignesTableau += `
+            <tr>
+                <td style="text-align: center;"></td>
+                <td>${premiereDesignation}</td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: right;"></td>
+                <td style="text-align: right;"></td>
+            </tr>
+        `;
+    }
+
+    lignesTableau += `
+        <tr>
+            <td style="text-align: center;"></td>
+            <td><strong>Marque :</strong> ROLLUX</td>
+            <td style="text-align: center;"></td>
+            <td style="text-align: right;"></td>
+            <td style="text-align: right;"></td>
+        </tr>
+    `;
+
+    listeRideauxEnregistres.forEach((r, idx) => {
+        sommeGlobale += r.montantTotal;
+        
+        let detailsComplementaires = [];
+        if (r.libelleMoteur) {
+            detailsComplementaires.push(`<strong>Moteur :</strong> ${r.libelleMoteur}`);
+        }
+        if (r.listeAccessoires && r.listeAccessoires.length > 0) {
+            detailsComplementaires.push(`<strong>Accessoires :</strong> ${r.listeAccessoires.join(', ')}`);
+        } else {
+            detailsComplementaires.push(`<em>Aucun accessoire sélectionné</em>`);
+        }
+
+        let texteComplementaireLigne = `<br><span style="font-size: 0.85em; color: #555;">${detailsComplementaires.join(' | ')}</span>`;
+
+        lignesTableau += `
+            <tr>
+                <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
+                <td><strong>Dimension de rideau :</strong> LxH = ${r.largeurMm} mm x ${r.hauteurMm} mm${texteComplementaireLigne}</td>
+                <td style="text-align: center; font-weight: bold;">${r.quantite}</td>
+                <td style="text-align: right;">${formatNombre(r.prixUnitaire)}</td>
+                <td style="text-align: right;">${formatNombre(r.montantTotal)}</td>
+            </tr>
+        `;
+    });
+
+    divContenu.innerHTML = `
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #0056b3;">
+            <p style="margin: 0 0 5px 0;"><strong>Client :</strong> ${clientGlobal.nom}</p>
+            <p style="margin: 0 0 5px 0;"><strong>Téléphone :</strong> ${clientGlobal.telephone}</p>
+            <p style="margin: 0;"><strong>Adresse :</strong> ${clientGlobal.adresse}</p>
+        </div>
+
+        <table class="recap-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ART</th>
+                    <th style="width: 52%;">Désignation</th>
+                    <th style="width: 8%;">Qté</th>
+                    <th style="width: 16%;">Prix Unitaire</th>
+                    <th style="width: 16%;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${lignesTableau}
+            </tbody>
+        </table>
+
+        <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+            <tr>
+                <td style="text-align: right; padding: 10px; font-weight: bold; font-size: 1.1em; width: 80%;">TOTAL TTC</td>
+                <td style="text-align: right; padding: 10px; font-weight: bold; font-size: 1.1em; border: 1px solid #bbb; background-color: #fff; width: 20%;">${formatNombre(sommeGlobale)}</td>
+            </tr>
+        </table>
+    `;
+}
+
+function enregistrerDevisDansSite() {
+    const numeroProforma = document.getElementById('titreProforma').innerText;
+    const htmlContenu = document.getElementById('zonePdfDevis').innerHTML;
+    const dateSauvegarde = new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+
+    let devisEnregistres = JSON.parse(localStorage.getItem('estProfilageDevis')) || [];
+    
+    const nouveauDevis = {
+        id: Date.now(),
+        client: clientGlobal.nom,
+        numero: numeroProforma,
+        date: dateSauvegarde,
+        html: htmlContenu
+    };
+
+    devisEnregistres.push(nouveauDevis);
+    localStorage.setItem('estProfilageDevis', JSON.stringify(devisEnregistres));
+
+    alert("Le devis a été enregistré avec succès dans le site !");
+}
+
+function afficherListeDevisEnregistres() {
+    document.getElementById('sectionEtape1').style.display = 'none';
+    const section = document.getElementById('sectionDevisEnregistres');
+    section.style.display = 'block';
+
+    const conteneurListe = document.getElementById('listeDevisContenu');
+    let devisEnregistres = JSON.parse(localStorage.getItem('estProfilageDevis')) || [];
+
+    if (devisEnregistres.length === 0) {
+        conteneurListe.innerHTML = `<p style="text-align: center; color: #666;">Aucun devis enregistré pour le moment.</p>`;
+        return;
+    }
+
+    let html = "";
+    devisEnregistres.slice().reverse().forEach((d) => {
+        html += `
+            <div class="devis-item-sauvegarde">
+                <div>
+                    <strong>${d.numero}</strong> - Client : <strong>${d.client}</strong><br>
+                    <small style="color: #666;">Enregistré le : ${d.date}</small>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button type="button" onclick="chargerDevisSauvegarde(${d.id})" style="background-color: #28a745; margin: 0; padding: 6px 10px; font-size: 14px;">Ouvrir</button>
+                    <button type="button" onclick="supprimerDevisSauvegarde(${d.id})" style="background-color: #dc3545; margin: 0; padding: 6px 10px; font-size: 14px;">Supprimer</button>
+                </div>
+            </div>
+        `;
+    });
+    conteneurListe.innerHTML = html;
+}
+
+function chargerDevisSauvegarde(id) {
+    let devisEnregistres = JSON.parse(localStorage.getItem('estProfilageDevis')) || [];
+    let devisTrouve = devisEnregistres.find(d => d.id === id);
+
+    if (devisTrouve) {
+        document.getElementById('sectionDevisEnregistres').style.display = 'none';
+        document.getElementById('affichageResultat').style.display = 'block';
+        document.getElementById('titreProforma').innerText = devisTrouve.numero;
+        document.getElementById('zonePdfDevis').innerHTML = devisTrouve.html;
+    }
+}
+
+function supprimerDevisSauvegarde(id) {
+    if (confirm("Voulez-vous vraiment supprimer ce devis du site ?")) {
+        let devisEnregistres = JSON.parse(localStorage.getItem('estProfilageDevis')) || [];
+        devisEnregistres = devisEnregistres.filter(d => d.id !== id);
+        localStorage.setItem('estProfilageDevis', JSON.stringify(devisEnregistres));
+        afficherListeDevisEnregistres();
+    }
+}
+
+function retourEtape1DepuisSauvegardes() {
+    document.getElementById('sectionDevisEnregistres').style.display = 'none';
+    document.getElementById('sectionEtape1').style.display = 'block';
+}
+
+function telechargerPdf() {
+    const element = document.getElementById('zonePdfDevis');
+    const opt = {
+        margin:       [10, 10, 10, 10], 
+        filename:     `Devis_Paysage_${clientGlobal.nom.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 1123, scrollX: 0, scrollY: 0 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    html2pdf().from(element).set(opt).save();
+}
+
+function recommencerDevis() {
+    document.getElementById('affichageResultat').style.display = 'none';
+    document.getElementById('sectionEtape1').style.display = 'block';
+    document.getElementById('nomClient').value = '';
+    document.getElementById('telephoneClient').value = '';
+    document.getElementById('adresseClient').value = '';
+    document.getElementById('lignesConfigurationRideaux').innerHTML = '';
+    ajouterLigneConfiguration();
+}
+</script>
+
+</body>
+</html>
