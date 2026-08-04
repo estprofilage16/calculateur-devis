@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Calculateur devis Rollux",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "estprofilage16.github",
+  "start_url": "/https://estprofilage16.github.io/calculateur-devis/",
+  "theme_color": "#ffffff"
+}
