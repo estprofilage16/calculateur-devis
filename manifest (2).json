@@ -1,11 +1,16 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
+  "name": "calculateur Devis",
+  "short_name": "Devis",
+  "start_url": "./index.html",
   "display": "standalone",
-  "name": "Calculateur devis Rollux",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "estprofilage16.github",
-  "start_url": "/https://estprofilage16.github.io/calculateur-devis/",
-  "theme_color": "#ffffff"
+  "background_color": "#ffffff",
+  "theme_color": "#0056b3",
+  "description": "Calculateur de devis multi-rideaux",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
